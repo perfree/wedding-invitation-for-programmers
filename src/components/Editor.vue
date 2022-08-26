@@ -32,7 +32,6 @@
   import Prism from 'prismjs'
   import 'prismjs/themes/prism-okaidia.css'
   import '../utils/raf'
-  import data from '../mock/data'
 
   import Executions from './Executions'
   import Invitation from './Invitation'
@@ -44,7 +43,7 @@
     data() {
       return {
         startDate: '',
-        code: data.code,
+        code: '',
         currentCode: '',
         isCursorVisible: 1,
         canExecute: false,
@@ -56,7 +55,8 @@
     },
     created() {
       this.startDate = (new Date()).toDateString()
-      this.progressivelyTyping()
+      this.getOptions()
+      
     },
     updated() {
       this.scrollToBottom()
@@ -72,6 +72,12 @@
       }
     },
     methods: {
+      getOptions() {
+        this.$axios.get('/api/option/getKeys',{params:{keys:'W_CUSTOM_CODE'}}).then(resp => {
+          this.code = '\n' + resp.data.data.W_CUSTOM_CODE;
+          this.progressivelyTyping()
+        });
+      },
       scrollToBottom() {
         // 保持页面一直滚到最下面
         this.$refs.editor.scrollTop = 100000

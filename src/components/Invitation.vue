@@ -4,11 +4,20 @@
       <div class="invitation-cover">
         <div class="cover-content" :class="{'invitation-up':isOpening}">
           <div class="content-inside">
-            <img class="content-inside-photo" src="../images/photo.jpg">
-            <p>我们结婚啦！</p>
+            <!-- <img class="content-inside-photo" src="https://www.bing.com/th?id=OHR.PeljesacWind_ZH-CN9299214248_1920x1080.jpg&rf=LaDigue_1920x1080.jpg"> -->
+            <div class="wrapper">
+              <swiper :options="swiperOptions">
+                <swiper-slide v-for="item in swiperList" :key="item.id">
+                  <img class="swiper-img" :src="item.imgUrl" />
+                </swiper-slide>
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper>
+            </div>
+            <div v-html="desc"></div>
+            <!-- <p>我们结婚啦！</p>
             <p><b>Jun & undefined</b></p>
             <p>时间：invalid date value</p>
-            <p>地点：<b>location can not be found</b></p>
+            <p>地点：<b>location can not be found</b></p> -->
             <div class="content-inside-bless">
               <input
                 placeholder="写下你的祝福" 
@@ -39,13 +48,39 @@ export default {
   props: ['canOpen'],
   data() {
     return {
+      desc: '',
       isOpening: false,
       wish: '',
       isFocused: false,
-      hasEntered: false
+      hasEntered: false,
+      swiperOptions: {
+        pagination: ".swiper-pagination",
+        loop: true,
+        autoplay: 2000,
+        autoplayDisableOnInteraction : false,
+      },
+      swiperList: [
+       
+      ]
     }
   },
+  created() {
+      this.getOptions()
+  },
   methods: {
+    getOptions() {
+      this.$axios.get('/api/option/getKeys',{params:{keys:'W_SWIPER_IMG,W_DESC'}}).then(resp => {
+        this.desc = resp.data.data.W_DESC;
+        let imgStr = resp.data.data.W_SWIPER_IMG.replaceAll('\n','');
+        imgStr = imgStr.substring(0, imgStr.lastIndexOf(','));
+        let imgArr = imgStr.split(',');
+        for (let index = 0; index < imgArr.length; index++) {
+          const element = imgArr[index];
+          const imgInfo = {id: index, imgUrl: element};
+          this.swiperList.push(imgInfo);
+        }
+      });
+    },
     // 打开邀请函
     openInvitation(){
       this.isOpening = true
