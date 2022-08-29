@@ -19,16 +19,18 @@
 </template>
 
 <script>
-  import data from '../mock/data'
-
   export default {
     props: ['wish', 'canStart'],
     data(){
       return {
-        barrages: data.barrages,
+        barrages: [],
         animationStyle:'',
         initialOffset: 0
       }
+    },
+     created() {
+      this.getOptions()
+      
     },
     computed: {
       codeInStyleTag: function () {
@@ -43,6 +45,15 @@
       }
     },
     methods: {
+      getOptions() {
+        this.$axios.get('/api/option/getKeys',{params:{keys:'W_ARTICLE_ID'}}).then(resp => {
+          this.$axios.post('/api/comment/getCommentByArticleId?articleId=' + resp.data.data.W_ARTICLE_ID + '&pageIndex=1&pageSize=99999').then(resp => {
+            resp.data.data.forEach(element => {
+              this.barrages.push( element.userName + ': ' + element.content);
+            });
+          });
+        });
+      },
       // 弹幕动画开始
       barrageAnimationStart() {
         let barrageWidth = this.getWidth(this.$refs.barrage)

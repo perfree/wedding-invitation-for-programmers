@@ -5,13 +5,18 @@
         <div class="cover-content" :class="{'invitation-up':isOpening}">
           <div class="content-inside">
             <!-- <img class="content-inside-photo" src="https://www.bing.com/th?id=OHR.PeljesacWind_ZH-CN9299214248_1920x1080.jpg&rf=LaDigue_1920x1080.jpg"> -->
-            <div class="wrapper">
+            <div class="wrapper" v-show="type === 1">
               <swiper :options="swiperOptions">
                 <swiper-slide v-for="item in swiperList" :key="item.id">
                   <img class="swiper-img" :src="item.imgUrl" />
                 </swiper-slide>
                 <div class="swiper-pagination" slot="pagination"></div>
               </swiper>
+            </div>
+            <div class="videxBox" v-show="type === 2">
+                <video width="100%" height="240" :src="videoUrl" controls autoplay loop id="video">
+                    您的浏览器不支持 video 标签。
+                </video>
             </div>
             <div v-html="desc"></div>
             <!-- <p>我们结婚啦！</p>
@@ -20,6 +25,10 @@
             <p>地点：<b>location can not be found</b></p> -->
             <div class="content-inside-bless">
               <input
+                placeholder="留下你的名字" 
+                v-model="userName"
+              >
+               <input
                 placeholder="写下你的祝福" 
                 @keyup.enter="sendBarrage"
                 @focus="isFocused = true"
@@ -27,7 +36,7 @@
                 v-model="wish"
                 ref="wishInput"
               >
-              <p v-if="!wish && isFocused && hasEntered">请输入祝福哦</p>
+              <p v-if="showTip">请输入名字和祝福哦</p>
               <div>
                 <button @click="sendBarrage">发送祝福弹幕</button>
                 <button @click="closeInvitation">关闭</button>
@@ -51,8 +60,14 @@ export default {
       desc: '',
       isOpening: false,
       wish: '',
+      userName: '',
+      type: 1,
       isFocused: false,
+      videoUrl: '',
+      showTip: false,
       hasEntered: false,
+      articleId: '',
+      commentEmail: '',
       swiperOptions: {
         pagination: ".swiper-pagination",
         loop: true,
@@ -69,24 +84,40 @@ export default {
   },
   methods: {
     getOptions() {
-      this.$axios.get('/api/option/getKeys',{params:{keys:'W_SWIPER_IMG,W_DESC'}}).then(resp => {
+      this.$axios.get('/api/option/getKeys',{params:{keys:'W_TOP_TYPE,W_SWIPER_IMG,W_DESC,W_VIDEO_URL,W_ARTICLE_ID,W_COMMENT_EMAIL'}}).then(resp => {
         this.desc = resp.data.data.W_DESC;
-        let imgStr = resp.data.data.W_SWIPER_IMG.replaceAll('\n','');
-        imgStr = imgStr.substring(0, imgStr.lastIndexOf(','));
-        let imgArr = imgStr.split(',');
-        for (let index = 0; index < imgArr.length; index++) {
-          const element = imgArr[index];
-          const imgInfo = {id: index, imgUrl: element};
-          this.swiperList.push(imgInfo);
+        this.type = Number.parseInt(resp.data.data.W_TOP_TYPE);
+        this.articleId = resp.data.data.W_ARTICLE_ID;
+        this.commentEmail = resp.data.data.W_COMMENT_EMAIL;
+        if(this.type === 1) {
+          let imgStr = resp.data.data.W_SWIPER_IMG.replaceAll('\n','');
+          imgStr = imgStr.substring(0, imgStr.lastIndexOf(','));
+          let imgArr = imgStr.split(',');
+          for (let index = 0; index < imgArr.length; index++) {
+            const element = imgArr[index];
+            const imgInfo = {id: index, imgUrl: element};
+            this.swiperList.push(imgInfo);
+          }
+        } 
+
+        if (this.type === 2) {
+          this.videoUrl = resp.data.data.W_VIDEO_URL;
         }
+        
       });
     },
     // 打开邀请函
     openInvitation(){
-      this.isOpening = true
+      this.isOpening = true;
+      if(this.type === 2) {
+        document.getElementById('video').play();
+      }
     },
     closeInvitation () {
-      this.isOpening = false
+      this.isOpening = false;
+      if(this.type === 2) {
+        document.getElementById('video').pause();
+      }
       setTimeout(() => {
         this.$emit('onClose')
       }, 660)
@@ -94,15 +125,38 @@ export default {
     // 发送弹幕
     sendBarrage(){
       this.$nextTick(() => {
-        this.hasEntered = true
-        if (!this.wish) {
-          return
+         this.showTip = false;
+        if(!this.wish || !this.userName || this.wish === '' || this.userName === '') {
+          this.showTip = true;
+          return;
         }
-        this.isOpening = false
-        this.$refs.wishInput.blur()
-        setTimeout(() => {
-          this.$emit('sendBarrage', this.wish)
-        }, 660)
+        const formData = new FormData();
+        formData.append('articleId', this.articleId);
+        formData.append('pid', '-1');
+        formData.append('topPid', '-1');
+        formData.append('userName', this.userName);
+        formData.append('email', this.commentEmail);
+        formData.append('content', this.wish);
+        this.$axios({
+          method:"post",
+          url:"/api/comment/submitComment",
+          headers:{
+          'Content-type': 'application/x-www-form-urlencoded'
+          },
+          data: formData
+        }).then((res)=>{
+          if (res.data.code === 200) {
+            this.isOpening = false;
+            if(this.type === 2) {
+              document.getElementById('video').pause();
+            }
+            this.$refs.wishInput.blur()
+            setTimeout(() => {
+              this.$emit('sendBarrage', this.userName + ': ' + this.wish)
+            }, 660)
+          }
+        })
+       
       })
     }
   }

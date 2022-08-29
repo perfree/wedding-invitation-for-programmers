@@ -48,6 +48,7 @@
         isCursorVisible: 1,
         canExecute: false,
         canOpen: false,
+        codeSpeed: 2,
         wish: '',
         hasClosed: false,
         canStart: false
@@ -73,8 +74,9 @@
     },
     methods: {
       getOptions() {
-        this.$axios.get('/api/option/getKeys',{params:{keys:'W_CUSTOM_CODE'}}).then(resp => {
+        this.$axios.get('/api/option/getKeys',{params:{keys:'W_CUSTOM_CODE,W_CODE_SPEED'}}).then(resp => {
           this.code = '\n' + resp.data.data.W_CUSTOM_CODE;
+          this.codeSpeed = Number.parseInt(resp.data.data.W_CODE_SPEED);
           this.progressivelyTyping()
         });
       },
@@ -90,7 +92,7 @@
           let step = () => {
             let randomNumber = Math.round(Math.random() * 6)
             // 摸你打字的随机速度
-            if(count % 2 === 0 && randomNumber % 4 === 0){
+            if(count % this.codeSpeed === 0 && randomNumber % 4 === 0){
               this.currentCode = this.code.substring(0, typingCount)
               typingCount++
             }
