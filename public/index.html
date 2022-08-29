@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta NAME="title" CONTENT="#(WEB_TITLE ?? '未设置')#(isBlank(SEO_TITLE) ? '': '-' + SEO_TITLE)">
+    <meta NAME="title" CONTENT="#option('WEB_TITLE','未设置')">
     <link rel="Shortcut Icon" href="#option('WEB_LOGO','/static/public/images/favicon.ico')" type="image/x-icon"/>
-    <title>#(WEB_TITLE ?? '未设置')#(isBlank(SEO_TITLE) ? '': '-' + SEO_TITLE)</title>
+    <title>#option('WEB_TITLE','未设置')</title>
   </head>
   <body>
     <noscript>
