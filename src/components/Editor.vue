@@ -25,6 +25,13 @@
     <Executions :canExecute="canExecute" @onUpdating="scrollToBottom" @onFinish="canOpen = true"/>
     <invitation :canOpen="canOpen" @onClose="canOpen = false, hasClosed = true" @sendBarrage="onAfterSending"/>
     <Barrage :wish="wish" :canStart="canStart"/>
+    <div style="display:none">
+      <audio width="100%" height="240" :src="musicUrl" loop id="music" controls preload="none">
+                          您的浏览器不支持 audio 标签。
+          </audio>
+    </div>
+    
+    <a class="music-play-btn" @click="playMusic()" id="musicPlayBtn">点击播放音乐</a>
   </div>
 </template>
 
@@ -51,7 +58,8 @@
         codeSpeed: 2,
         wish: '',
         hasClosed: false,
-        canStart: false
+        canStart: false,
+        musicUrl: ''
       }
     },
     created() {
@@ -74,9 +82,17 @@
     },
     methods: {
       getOptions() {
-        this.$axios.get('/api/option/getKeys',{params:{keys:'W_CUSTOM_CODE,W_CODE_SPEED'}}).then(resp => {
+        this.$axios.get('/api/option/getKeys',{params:{keys:'W_CUSTOM_CODE,W_CODE_SPEED,W_MUSIC_URL,W_MUSIC_PLAY_TYPE'}}).then(resp => {
           this.code = '\n' + resp.data.data.W_CUSTOM_CODE;
           this.codeSpeed = Number.parseInt(resp.data.data.W_CODE_SPEED);
+        
+          if(resp.data.data.W_MUSIC_PLAY_TYPE === '1') {
+            this.musicUrl = resp.data.data.W_MUSIC_URL;
+            this.audioAutoPlay('music');
+          }
+          if(resp.data.data.W_MUSIC_PLAY_TYPE === '2') {
+            this.musicUrl = resp.data.data.W_MUSIC_URL;
+          }
           this.progressivelyTyping()
         });
       },
@@ -119,12 +135,50 @@
         setTimeout(() => {
           this.canStart = true
         }, 800)
+      },
+      audioAutoPlay(id){  
+        var ua = navigator.userAgent.toLowerCase();
+        var isWeixin = ua.indexOf('micromessenger') != -1;
+        if(isWeixin) {
+          let play = function(){  
+            document.getElementById(id).play();
+            document.removeEventListener("touchstart",play, false);  
+          };  
+          document.addEventListener("WeixinJSBridgeReady", function () {  
+            play();  
+          }, false);  
+          document.addEventListener('YixinJSBridgeReady', function() {  
+            play();  
+          }, false);  
+          document.addEventListener("touchstart",play, false);  
+        } else {
+          document.getElementById('musicPlayBtn').style.display = "inline-block";
+        }
+      },
+      playMusic() {
+        document.getElementById('music').play();
       }
     }
   }
 </script>
 
 <style lang="less">
+.music-play-btn{
+    position: absolute;
+    top: 10px;
+    right: 11px;
+    z-index: 99;
+    color: white;
+    font-size: 14px;
+    background: #fdbc40;
+    border-radius: 5px;
+    padding: 1px 10px;
+    display: none;
+    cursor: pointer;
+}
+.music-play-btn:hover{
+  color: white;
+}
 .wedding-editor{
   position: absolute;
   top: 0;

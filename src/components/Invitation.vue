@@ -14,7 +14,9 @@
               </swiper>
             </div>
             <div class="videxBox" v-show="type === 2">
-                <video width="100%" height="240" :src="videoUrl" controls autoplay loop id="video">
+                <video width="100%" height="240" :src="videoUrl" controls loop id="video" preload="none"  x5-playsinline="true"
+ playsinline="true" 
+ webkit-playsinline="true" >
                     您的浏览器不支持 video 标签。
                 </video>
             </div>
@@ -61,6 +63,7 @@ export default {
       isOpening: false,
       wish: '',
       userName: '',
+      musicType: '',
       type: 1,
       isFocused: false,
       videoUrl: '',
@@ -84,11 +87,12 @@ export default {
   },
   methods: {
     getOptions() {
-      this.$axios.get('/api/option/getKeys',{params:{keys:'W_TOP_TYPE,W_SWIPER_IMG,W_DESC,W_VIDEO_URL,W_ARTICLE_ID,W_COMMENT_EMAIL'}}).then(resp => {
+      this.$axios.get('/api/option/getKeys',{params:{keys:'W_TOP_TYPE,W_SWIPER_IMG,W_DESC,W_VIDEO_URL,W_ARTICLE_ID,W_COMMENT_EMAIL,W_MUSIC_PLAY_TYPE'}}).then(resp => {
         this.desc = resp.data.data.W_DESC;
         this.type = Number.parseInt(resp.data.data.W_TOP_TYPE);
         this.articleId = resp.data.data.W_ARTICLE_ID;
         this.commentEmail = resp.data.data.W_COMMENT_EMAIL;
+        this.musicType = resp.data.data.W_MUSIC_PLAY_TYPE;
         if(this.type === 1) {
           let imgStr = resp.data.data.W_SWIPER_IMG.replaceAll('\n','');
           imgStr = imgStr.substring(0, imgStr.lastIndexOf(','));
@@ -111,6 +115,9 @@ export default {
       this.isOpening = true;
       if(this.type === 2) {
         document.getElementById('video').play();
+      }
+      if(this.musicType === '2'){
+         document.getElementById('music').play();
       }
     },
     closeInvitation () {
